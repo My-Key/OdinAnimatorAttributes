@@ -5,7 +5,7 @@
 Put `AnimatorAttributes` folder in project
 
 # Example
-![](Images/Example.png)
+![](Images/Example.PNG)
 
 ```cs
 [SerializeField]
