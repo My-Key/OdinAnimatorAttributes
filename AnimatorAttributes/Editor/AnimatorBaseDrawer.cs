@@ -76,7 +76,7 @@ public abstract class AnimatorBaseDrawer<TAttribute, TType> : OdinAttributeDrawe
 
 		if (!animator)
 		{
-			SirenixEditorGUI.ErrorMessageBox("Selected animator is not set");
+			SirenixEditorGUI.ErrorMessageBox($"Property '{m_animatorResolver.Context.ResolvedString}' is not set");
 			
 			if (label != null)
 				EditorGUILayout.LabelField(label, m_buttonContent);
