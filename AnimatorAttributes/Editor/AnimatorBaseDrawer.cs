@@ -1,4 +1,5 @@
-﻿using Sirenix.OdinInspector.Editor;
+﻿using System.Reflection;
+using Sirenix.OdinInspector.Editor;
 using Sirenix.OdinInspector.Editor.ValueResolvers;
 using Sirenix.Utilities.Editor;
 using UnityEditor;
@@ -29,16 +30,33 @@ public abstract class AnimatorBaseDrawer<TAttribute, TType> : OdinAttributeDrawe
 		
 		if (string.IsNullOrEmpty(stringToResolve))
 		{
-			for (int index = 0; index < property.Parent.Children.Count; ++index)
+			var fields =
+				property.ParentType.GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+
+			foreach (var field in fields)
 			{
-				var inspectorProperty = property.Parent.Children[index];
-				var type = inspectorProperty.ValueEntry.BaseValueType;
-
-				if (type == typeof(Animator) || type == typeof(RuntimeAnimatorController))
+				if (field.FieldType == typeof(Animator) || field.FieldType == typeof(RuntimeAnimatorController))
 				{
-					stringToResolve = $"${inspectorProperty.Name}";
-
+					stringToResolve = $"${field.Name}";
 					break;
+				}
+			}
+			
+			if (string.IsNullOrEmpty(stringToResolve))
+			{
+				var properties =
+					property.ParentType.GetProperties(BindingFlags.Instance | BindingFlags.NonPublic |
+					                                  BindingFlags.Public);
+
+				foreach (var parentProperty in properties)
+				{
+					if (parentProperty.PropertyType == typeof(Animator) ||
+					    parentProperty.PropertyType == typeof(RuntimeAnimatorController))
+					{
+						stringToResolve = $"${parentProperty.Name}";
+
+						break;
+					}
 				}
 			}
 		}
