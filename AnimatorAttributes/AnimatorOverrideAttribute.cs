@@ -1,4 +1,14 @@
-﻿
+﻿using System;
+using System.Diagnostics;
+
+#if UNITY_EDITOR
+using Sirenix.OdinInspector.Editor;
+
+[assembly: OdinVisualDesignerAttributeItem("Animator", typeof(AnimatorOverrideAttribute))]
+#endif
+
+[AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
+[Conditional("UNITY_EDITOR")]
 public class AnimatorOverrideAttribute : AnimatorBaseAttribute
 {
 	/// <param name="animatorField">String to resolve Animator or RuntimeAnimatorController.
