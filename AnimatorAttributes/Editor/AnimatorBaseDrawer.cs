@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System.Linq;
+using System.Reflection;
 using Sirenix.OdinInspector.Editor;
 using Sirenix.OdinInspector.Editor.ValueResolvers;
 using Sirenix.Utilities.Editor;
@@ -28,10 +29,30 @@ public abstract class AnimatorBaseDrawer<TAttribute, TType> : OdinAttributeDrawe
 	{
 		var stringToResolve = animatorAttribute.AnimatorField;
 		
+		var currentProperty = property;
+
+		if (currentProperty.ParentType.IsArray)
+			currentProperty = currentProperty.ParentValueProperty;
+
+		AnimatorBaseAttribute currentAttribute;
+
+		// Try to get override
+		do
+		{
+			currentAttribute = currentProperty.ParentValueProperty
+				?.GetAttribute<AnimatorOverrideAttribute>();
+
+			if (currentAttribute != null)
+			{
+				currentProperty = currentProperty.ParentValueProperty;
+				stringToResolve = currentAttribute.AnimatorField;
+			}
+		} while (currentAttribute != null);
+		
 		if (string.IsNullOrEmpty(stringToResolve))
 		{
 			var fields =
-				property.ParentType.GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+				currentProperty.ParentType.GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
 
 			foreach (var field in fields)
 			{
@@ -45,8 +66,8 @@ public abstract class AnimatorBaseDrawer<TAttribute, TType> : OdinAttributeDrawe
 			if (string.IsNullOrEmpty(stringToResolve))
 			{
 				var properties =
-					property.ParentType.GetProperties(BindingFlags.Instance | BindingFlags.NonPublic |
-					                                  BindingFlags.Public);
+					currentProperty.ParentType.GetProperties(BindingFlags.Instance | BindingFlags.NonPublic |
+					                                         BindingFlags.Public);
 
 				foreach (var parentProperty in properties)
 				{
@@ -61,7 +82,7 @@ public abstract class AnimatorBaseDrawer<TAttribute, TType> : OdinAttributeDrawe
 			}
 		}
 
-		resolver = ValueResolver.Get<RuntimeAnimatorController>(property, stringToResolve);
+		resolver = ValueResolver.Get<RuntimeAnimatorController>(currentProperty, stringToResolve);
 	}
 
 	private void ValueChanged(int obj) => UpdateButton();
