@@ -3,11 +3,11 @@ using Sirenix.OdinInspector.Editor;
 using UnityEditor.Animations;
 using UnityEngine;
 
-public abstract class AnimatorStateBaseAttributeDrawer<TType> : AnimatorBaseDrawer<AnimatorStateAttribute, TType>
+public abstract class AnimatorStateBaseAttributeDrawer<TType> : AnimatorBaseDrawer<AnimatorStateAttribute, TType>, IDefinesGenericMenuItems
 {
 	public const string PATH_SEPARATOR = "/";
 	public const string HASH_SEPARATOR = ".";
-}
+	}
 
 public class AnimatorStateAttributeDrawer : AnimatorStateBaseAttributeDrawer< int>
 {
@@ -44,7 +44,9 @@ public class AnimatorStateAttributeDrawer : AnimatorStateBaseAttributeDrawer< in
 
 		foreach (var nextStateMachine in stateMachine.stateMachines)
 		{
-			var name = GetNameFromHash(nextStateMachine.stateMachine, pathPrefix, hashPrefix);
+			var name = GetNameFromHash(nextStateMachine.stateMachine, 
+				pathPrefix + nextStateMachine.stateMachine.name + PATH_SEPARATOR,
+				hashPrefix + nextStateMachine.stateMachine.name + HASH_SEPARATOR);
 			
 			if (name != null)
 				return name;
@@ -104,7 +106,7 @@ public class AnimatorStateAttributeDrawer : AnimatorStateBaseAttributeDrawer< in
 				hashPrefix + currentStateMachine.name + HASH_SEPARATOR);
 		}
 	}
-}
+		}
 
 public class AnimatorStateStringAttributeDrawer : AnimatorStateBaseAttributeDrawer<string>
 {
