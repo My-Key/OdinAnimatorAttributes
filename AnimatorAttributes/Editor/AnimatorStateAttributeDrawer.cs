@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using Sirenix.OdinInspector.Editor;
+using UnityEditor;
 using UnityEditor.Animations;
 using UnityEngine;
 
@@ -7,7 +8,42 @@ public abstract class AnimatorStateBaseAttributeDrawer<TType> : AnimatorBaseDraw
 {
 	public const string PATH_SEPARATOR = "/";
 	public const string HASH_SEPARATOR = ".";
+
+	public void PopulateGenericMenu(InspectorProperty property, GenericMenu genericMenu)
+	{
+		genericMenu.AddSeparator("");
+		genericMenu.AddItem(new GUIContent("Select state in animator"), false, OpenAnimator, GetAnimatorController());
 	}
+
+	private void OpenAnimator(object data)
+	{
+		var animator = data as AnimatorController;
+
+		if (!animator) 
+			return;
+		
+		Selection.SetActiveObjectWithContext(animator, null);
+		AssetDatabase.OpenAsset(animator);
+		Selection.SetActiveObjectWithContext(animator, null);
+
+		EditorApplication.delayCall += () => SelectState(animator);
+	}
+
+	private void SelectState(AnimatorController animator)
+	{
+		var state = GetState(ValueEntry.SmartValue, animator);
+
+		var stateMachine = GetStateMachine(ValueEntry.SmartValue, animator);
+
+		Selection.SetActiveObjectWithContext(state, null);
+
+		AnimatorControllerToolUtil.SetActiveStateMachine(animator, stateMachine);
+	}
+
+	protected abstract AnimatorStateMachine GetStateMachine(TType value, AnimatorController animator);
+
+	protected abstract AnimatorState GetState(TType value, AnimatorController animator);
+}
 
 public class AnimatorStateAttributeDrawer : AnimatorStateBaseAttributeDrawer< int>
 {
@@ -106,7 +142,80 @@ public class AnimatorStateAttributeDrawer : AnimatorStateBaseAttributeDrawer< in
 				hashPrefix + currentStateMachine.name + HASH_SEPARATOR);
 		}
 	}
+
+	protected override AnimatorStateMachine GetStateMachine(int value, AnimatorController animator)
+	{
+		foreach (var layer in animator.layers)
+		{
+			var state = GetStateMachineFromHash(layer.stateMachine, layer.name + HASH_SEPARATOR, value);
+
+			if (state)
+				return state;
 		}
+
+		return null;
+	}
+
+	private AnimatorStateMachine GetStateMachineFromHash(AnimatorStateMachine stateMachine, string hashPrefix, int hash)
+	{
+		foreach (var state in stateMachine.states)
+		{
+			var stateHash = Animator.StringToHash(hashPrefix + state.state.name);
+			
+			if (stateHash == hash)
+				return stateMachine;
+		}
+
+		foreach (var nextStateMachine in stateMachine.stateMachines)
+		{
+			var foundStateMachine = GetStateMachineFromHash(nextStateMachine.stateMachine, 
+				hashPrefix + nextStateMachine.stateMachine.name + HASH_SEPARATOR,
+				hash);
+			
+			if (foundStateMachine)
+				return foundStateMachine;
+		}
+
+		return null;
+	}
+
+	protected override AnimatorState GetState(int value, AnimatorController animator)
+	{
+		foreach (var layer in animator.layers)
+		{
+			var state = GetStateFromHash(layer.stateMachine, layer.name + HASH_SEPARATOR, value);
+
+			if (state)
+				return state;
+		}
+
+		return null;
+	}
+
+
+	private AnimatorState GetStateFromHash(AnimatorStateMachine stateMachine, string hashPrefix, int hash)
+	{
+		foreach (var state in stateMachine.states)
+		{
+			var stateHash = Animator.StringToHash(hashPrefix + state.state.name);
+			
+			if (stateHash == hash)
+				return state.state;
+		}
+
+		foreach (var nextStateMachine in stateMachine.stateMachines)
+		{
+			var state = GetStateFromHash(nextStateMachine.stateMachine, 
+				hashPrefix + nextStateMachine.stateMachine.name + HASH_SEPARATOR,
+				hash);
+			
+			if (state)
+				return state;
+		}
+
+		return null;
+	}
+}
 
 public class AnimatorStateStringAttributeDrawer : AnimatorStateBaseAttributeDrawer<string>
 {
@@ -193,5 +302,73 @@ public class AnimatorStateStringAttributeDrawer : AnimatorStateBaseAttributeDraw
 			AddStates(currentStateMachine, selector,
 				pathPrefix + currentStateMachine.name + PATH_SEPARATOR);
 		}
+	}
+	
+	protected override AnimatorStateMachine GetStateMachine(string value, AnimatorController animator)
+	{
+		foreach (var layer in animator.layers)
+		{
+			var state = GetStateMachineFromPath(layer.stateMachine, layer.name + PATH_SEPARATOR, value);
+
+			if (state)
+				return state;
+		}
+
+		return null;
+	}
+
+	private AnimatorStateMachine GetStateMachineFromPath(AnimatorStateMachine stateMachine, string pathPrefix, string name)
+	{
+		foreach (var state in stateMachine.states)
+		{
+			if (pathPrefix + state.state.name == name)
+				return stateMachine;
+		}
+
+		foreach (var nextStateMachine in stateMachine.stateMachines)
+		{
+			var foundStateMachine = GetStateMachineFromPath(nextStateMachine.stateMachine, 
+				pathPrefix + nextStateMachine.stateMachine.name + PATH_SEPARATOR,
+				name);
+			
+			if (foundStateMachine)
+				return foundStateMachine;
+		}
+
+		return null;
+	}
+
+	protected override AnimatorState GetState(string value, AnimatorController animator)
+	{
+		foreach (var layer in animator.layers)
+		{
+			var state = GetStateFromPath(layer.stateMachine, layer.name + PATH_SEPARATOR, value);
+
+			if (state)
+				return state;
+		}
+
+		return null;
+	}
+
+	private AnimatorState GetStateFromPath(AnimatorStateMachine stateMachine, string pathPrefix, string path)
+	{
+		foreach (var state in stateMachine.states)
+		{
+			if (pathPrefix + state.state.name == path)
+				return state.state;
+		}
+
+		foreach (var nextStateMachine in stateMachine.stateMachines)
+		{
+			var state = GetStateFromPath(nextStateMachine.stateMachine, 
+				pathPrefix + nextStateMachine.stateMachine.name + PATH_SEPARATOR,
+				path);
+			
+			if (state)
+				return state;
+		}
+
+		return null;
 	}
 }
