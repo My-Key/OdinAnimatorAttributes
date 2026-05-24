@@ -4,6 +4,10 @@
 
 Put `AnimatorAttributes` folder in project
 
+# Right click menu
+
+Property has context menu option `Select state in animator` that opens animator window and selects chosen state
+
 # Example
 ![](Images/Example.PNG)
 
@@ -30,3 +34,7 @@ private int m_state;
 [AnimatorState]
 private string m_stateString;
 ```
+
+# Special thanks
+
+akof1314 - helper functions to open Animator window - https://gist.github.com/akof1314/65ca8ffcf64ccdc802730ddade71a8ff
